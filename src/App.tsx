@@ -23,7 +23,6 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from "@google/genai";
 import ReactMarkdown from 'react-markdown';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -114,22 +113,25 @@ export default function App() {
     const systemPrompt = "你是一位兼具技术深度与文学修养的专栏作家。你擅长将复杂的调研数据转化为逻辑严密、文辞优美的 Markdown 文章，完美支持 Hugo 博客规范。";
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: userQuery,
-        config: {
-          systemInstruction: systemPrompt,
-          tools: [{ googleSearch: {} }]
-        }
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic,
+          keyPoints,
+          systemPrompt,
+          userQuery
+        })
       });
 
-      const contentText = response.text || '';
-      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      const groundingSources: GroundingSource[] = groundingChunks?.map((chunk: any) => ({
-        uri: chunk.web?.uri || '',
-        title: chunk.web?.title || '引用来源'
-      })).filter((s: GroundingSource) => s.uri) || [];
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate content");
+      }
+
+      const result = await response.json();
+      const contentText = result.text;
+      const groundingSources = result.sources || [];
 
       if (contentText) {
         setMarkdown(contentText);
