@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Noto Serif SC", "Playfair Display", serif;
+  --font-sans: "Inter", "Noto Sans SC", sans-serif;
+  --color-paper: #FDFCFB;
+  --color-ink: #1A1A1A;
+}
+
+@layer base {
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-black/10 rounded-full hover:bg-black/20 transition-colors;
+}
+
+.markdown-body {
+  @apply font-serif leading-relaxed text-lg;
+}
+
+.markdown-body h2 {
+  @apply text-2xl font-bold mt-12 mb-6 pb-2 border-b border-black/5;
+}
+
+.markdown-body p {
+  @apply mb-6;
+}
+
+.markdown-body blockquote {
+  @apply border-l-4 border-black/20 pl-6 italic my-8 text-black/60;
+}
