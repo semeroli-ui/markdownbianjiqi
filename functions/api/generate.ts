@@ -17,9 +17,9 @@ export const onRequestPost = async (context) => {
     // 正确的初始化方式：必须使用 { apiKey: ... }
     const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
     
-    // 使用最新的 generateContent 调用方式
+    // 切换到更稳定的 gemini-1.5-flash 模型，它的免费配额通常更高
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview", // 或者 "gemini-1.5-flash"
+      model: "gemini-1.5-flash", 
       contents: userQuery,
       config: {
         systemInstruction: systemPrompt,
