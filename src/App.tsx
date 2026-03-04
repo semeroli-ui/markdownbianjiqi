@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   FileText, 
   Download, 
@@ -20,13 +20,51 @@ import {
   Quote,
   History,
   Trash2,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { format } from 'date-fns';
+import mermaid from 'mermaid';
+
+// --- Mermaid Component ---
+const Mermaid = ({ chart }: { chart: string }) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (ref.current && chart) {
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: '#10B981',
+          primaryTextColor: '#1A1A1A',
+          primaryBorderColor: '#10B981',
+          lineColor: '#10B981',
+          secondaryColor: '#FDFCFB',
+          tertiaryColor: '#FDFCFB',
+        },
+        securityLevel: 'loose',
+      });
+      mermaid.contentLoaded();
+      
+      // Clear previous content and render new chart
+      const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+      mermaid.render(id, chart).then(({ svg }) => {
+        if (ref.current) {
+          ref.current.innerHTML = svg;
+        }
+      }).catch(err => {
+        console.error("Mermaid render error:", err);
+      });
+    }
+  }, [chart]);
+
+  return <div key={chart} ref={ref} className="mermaid" />;
+};
 
 // --- Utility ---
 function cn(...inputs: ClassValue[]) {
@@ -110,7 +148,8 @@ export default function App() {
    - 使用 H2 为大节，H3 为细分点。
    - 必须包含一个数据对比表格。
    - 使用引用(Blockquote)来提炼文章的核心金句。
-5. **SEO 与 语气**: 语气专业、儒雅，适合发布在高品质科技或人文博客。`;
+5. **SEO 与 语气**: 语气专业、儒雅，适合发布在高品质科技或人文博客。
+6. **逻辑图表**: 必须包含一个 Mermaid 流程图或时序图，用于展示核心逻辑或流程，代码块标记为 \`\`\`mermaid\`\`\`。`;
 
     const systemPrompt = "你是一位兼具技术深度与文学修养的专栏作家。你擅长将复杂的调研数据转化为逻辑严密、文辞优美的 Markdown 文章，完美支持 Hugo 博客规范。";
 
@@ -199,12 +238,12 @@ export default function App() {
       <aside className="w-80 border-r border-black/5 bg-white/50 backdrop-blur-sm flex flex-col">
         <div className="p-8 border-b border-black/5">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-ink rounded-full flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 bg-brand rounded-full flex items-center justify-center shadow-lg shadow-brand/20">
               <Feather className="text-white w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-sm font-serif font-black tracking-widest uppercase">InsightScribe</h1>
-              <p className="text-[10px] text-black/40 font-bold tracking-widest uppercase">博见文库</p>
+              <h1 className="text-sm font-serif font-black tracking-widest uppercase text-ink">InsightScribe</h1>
+              <p className="text-[10px] text-brand font-bold tracking-widest uppercase">博见文库</p>
             </div>
           </div>
         </div>
@@ -214,13 +253,13 @@ export default function App() {
             <label className="block text-[10px] font-black text-black/40 uppercase tracking-[0.2em] mb-4">创作设定</label>
             <div className="space-y-6">
               <div className="group">
-                <label className="block text-xs font-bold text-black/60 mb-2 group-focus-within:text-ink transition-colors">调研主题</label>
+                <label className="block text-xs font-bold text-black/60 mb-2 group-focus-within:text-brand transition-colors">调研主题</label>
                 <input 
                   type="text" 
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="如：AI时代的文学重构"
-                  className="w-full bg-transparent border-b border-black/10 py-2 text-lg outline-none focus:border-ink transition-all placeholder:text-black/10 font-serif"
+                  className="w-full bg-transparent border-b border-black/10 py-2 text-lg outline-none focus:border-brand transition-all placeholder:text-black/10 font-serif"
                 />
               </div>
               <div>
@@ -236,9 +275,9 @@ export default function App() {
               <button 
                 onClick={generateContent} 
                 disabled={isLoading || !topic}
-                className="w-full flex items-center justify-center gap-3 py-4 bg-ink text-white rounded-xl hover:bg-black/80 disabled:opacity-20 transition-all font-bold text-sm shadow-xl active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-3 py-4 bg-brand text-white rounded-xl hover:bg-brand-dark disabled:opacity-20 transition-all font-bold text-sm shadow-xl shadow-brand/20 active:scale-[0.98]"
               >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookOpen className="w-4 h-4" />}
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 {markdown ? '重研此篇' : '提笔创作'}
               </button>
             </div>
@@ -355,14 +394,30 @@ export default function App() {
                 <div className="max-w-2xl mx-auto markdown-body">
                   {coverImage && (
                     <motion.img 
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
                       src={coverImage} 
                       alt="Cover" 
-                      className="w-full aspect-video object-cover rounded-2xl shadow-2xl mb-12"
+                      className="w-full aspect-video object-cover rounded-2xl shadow-2xl mb-12 border-4 border-white"
                     />
                   )}
-                  <ReactMarkdown>{markdown || "_等待灵感降临..._"}</ReactMarkdown>
+                  <ReactMarkdown
+                    components={{
+                      code({ node, inline, className, children, ...props }: any) {
+                        const match = /language-(\w+)/.exec(className || '');
+                        if (!inline && match && match[1] === 'mermaid') {
+                          return <Mermaid chart={String(children).replace(/\n$/, '')} />;
+                        }
+                        return (
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        );
+                      }
+                    }}
+                  >
+                    {markdown || "_等待灵感降临..._"}
+                  </ReactMarkdown>
                 </div>
               </motion.div>
             )}
@@ -443,8 +498,8 @@ export default function App() {
               exit={{ opacity: 0, y: 20 }}
               className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[100]"
             >
-              <div className="bg-ink text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 text-xs font-bold tracking-wider">
-                <Check className="w-4 h-4 text-emerald-400" />
+              <div className="bg-brand text-white px-6 py-3 rounded-full shadow-2xl shadow-brand/30 flex items-center gap-3 text-xs font-bold tracking-wider">
+                <Check className="w-4 h-4 text-white" />
                 {toast}
               </div>
             </motion.div>

@@ -5,6 +5,8 @@
   --font-sans: "Inter", "Noto Sans SC", sans-serif;
   --color-paper: #FDFCFB;
   --color-ink: #1A1A1A;
+  --color-brand: #10B981; /* Vibrant Emerald */
+  --color-brand-dark: #059669;
 }
 
 @layer base {
@@ -14,6 +16,10 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
+  }
+
+  a {
+    @apply text-brand hover:text-brand-dark transition-colors underline underline-offset-4 decoration-brand/30;
   }
 }
 
@@ -28,7 +34,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-black/10 rounded-full hover:bg-black/20 transition-colors;
+  @apply bg-brand/20 rounded-full hover:bg-brand/40 transition-colors;
 }
 
 .markdown-body {
@@ -38,7 +44,7 @@
 
 /* Drop Cap - 首字下沉 */
 .markdown-body > p:first-of-type::first-letter {
-  @apply float-left text-6xl font-black mr-3 mt-2 text-ink;
+  @apply float-left text-6xl font-black mr-3 mt-2 text-brand;
   line-height: 1;
 }
 
@@ -47,11 +53,21 @@
 }
 
 .markdown-body h2 {
-  @apply text-3xl font-bold mt-16 mb-8 pb-4 border-b border-black/10 text-ink tracking-tight;
+  @apply text-3xl font-bold mt-16 mb-8 pb-4 border-b-2 border-brand/10 text-ink tracking-tight relative;
+}
+
+.markdown-body h2::after {
+  content: "";
+  @apply absolute bottom-0 left-0 w-12 h-0.5 bg-brand;
 }
 
 .markdown-body h3 {
-  @apply text-xl font-bold mt-10 mb-4 text-ink/90;
+  @apply text-xl font-bold mt-10 mb-4 text-ink/90 flex items-center gap-2;
+}
+
+.markdown-body h3::before {
+  content: "";
+  @apply w-1.5 h-1.5 rounded-full bg-brand;
 }
 
 .markdown-body p {
@@ -59,24 +75,24 @@
 }
 
 .markdown-body blockquote {
-  @apply border-l-0 pl-0 my-12 relative py-4;
+  @apply border-l-0 pl-0 my-12 relative py-8 px-12 bg-brand/[0.02] rounded-3xl;
 }
 
 .markdown-body blockquote::before {
   content: "“";
-  @apply absolute -left-8 -top-4 text-7xl text-black/5 font-serif;
+  @apply absolute left-4 top-2 text-8xl text-brand/10 font-serif;
 }
 
 .markdown-body blockquote p {
-  @apply text-2xl font-medium italic text-ink/70 leading-relaxed text-center max-w-xl mx-auto;
+  @apply text-2xl font-medium italic text-brand/80 leading-relaxed text-center max-w-xl mx-auto;
 }
 
 .markdown-body table {
-  @apply w-full my-12 border-collapse text-sm;
+  @apply w-full my-12 border-collapse text-sm overflow-hidden rounded-xl shadow-sm;
 }
 
 .markdown-body th {
-  @apply bg-black/5 p-4 text-left font-bold border-b border-black/10 uppercase tracking-widest text-[10px];
+  @apply bg-brand/5 p-4 text-left font-bold border-b border-brand/10 uppercase tracking-widest text-[10px] text-brand;
 }
 
 .markdown-body td {
@@ -84,7 +100,7 @@
 }
 
 .markdown-body hr {
-  @apply my-16 border-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent;
+  @apply my-16 border-0 h-px bg-gradient-to-r from-transparent via-brand/20 to-transparent;
 }
 
 .markdown-body ul, .markdown-body ol {
@@ -92,10 +108,20 @@
 }
 
 .markdown-body li {
-  @apply list-disc;
+  @apply list-none relative pl-6;
+}
+
+.markdown-body ul li::before {
+  content: "→";
+  @apply absolute left-0 text-brand font-bold;
 }
 
 /* Image styling */
 .markdown-body img {
-  @apply rounded-2xl shadow-2xl my-12 w-full object-cover;
+  @apply rounded-2xl shadow-2xl my-12 w-full object-cover border-4 border-white;
+}
+
+/* Mermaid styling */
+.mermaid {
+  @apply my-12 flex justify-center bg-white p-8 rounded-2xl border border-brand/10 shadow-sm;
 }
