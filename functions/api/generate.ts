@@ -6,17 +6,26 @@ export const onRequestPost = async (context) => {
   // 1. 检查 API Key 是否配置
   if (!env.GEMINI_API_KEY) {
     return new Response(
-      JSON.stringify({ error: "GEMINI_API_KEY is not configured in Cloudflare Dashboard. Please add it to Settings -> Functions -> Environment variables." }),
+      JSON.stringify({ error: "GEMINI_API_KEY 未在 Cloudflare 后台配置。" }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 
+  const rawKey = env.GEMINI_API_KEY || "";
+  const cleanApiKey = rawKey.replace(/[\n\r\s\t]/g, "");
+
+  // 安全检查：如果密钥太短或格式不对，直接拦截并提示
+  if (cleanApiKey.length < 20) {
+    return new Response(
+      JSON.stringify({ 
+        error: `API Key 格式似乎不对。收到长度: ${cleanApiKey.length}，开头: ${cleanApiKey.substring(0, 4)}...`,
+        tip: "请确保从 AI Studio 复制了完整的密钥（通常以 AIza 开头）。"
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
   try {
     const { topic, keyPoints, systemPrompt, userQuery } = await request.json();
-
-    // 正确的初始化方式：必须使用 { apiKey: ... }
-    // 使用正则彻底移除可能存在的换行、空格或其他不可见字符，防止 "Invalid header value" 错误
-    const cleanApiKey = env.GEMINI_API_KEY.replace(/[\n\r\s\t]/g, "");
     const ai = new GoogleGenAI({ apiKey: cleanApiKey });
     
     // 尝试模型顺序：1.5-flash-latest -> 1.5-flash-8b -> 2.0-flash
