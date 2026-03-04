@@ -20,7 +20,8 @@ async function startServer() {
     }
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const cleanApiKey = process.env.GEMINI_API_KEY.replace(/[\n\r\s\t]/g, "");
+      const ai = new GoogleGenAI({ apiKey: cleanApiKey });
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: userQuery,

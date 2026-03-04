@@ -15,7 +15,9 @@ export const onRequestPost = async (context) => {
     const { topic, keyPoints, systemPrompt, userQuery } = await request.json();
 
     // 正确的初始化方式：必须使用 { apiKey: ... }
-    const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+    // 使用正则彻底移除可能存在的换行、空格或其他不可见字符，防止 "Invalid header value" 错误
+    const cleanApiKey = env.GEMINI_API_KEY.replace(/[\n\r\s\t]/g, "");
+    const ai = new GoogleGenAI({ apiKey: cleanApiKey });
     
     // 尝试模型顺序：1.5-flash-latest -> 1.5-flash-8b -> 2.0-flash
     let response;
