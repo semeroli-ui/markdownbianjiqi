@@ -12,48 +12,58 @@ export const onRequestPost = async (context) => {
   }
 
   const rawKey = env.GEMINI_API_KEY || "";
-  const cleanApiKey = rawKey.replace(/[\n\r\s\t]/g, "");
+  // 支持逗号分隔的多个密钥，并清理空格
+  const apiKeys = rawKey.split(",").map(k => k.replace(/[\n\r\s\t]/g, "")).filter(k => k.length > 20);
 
-  // 安全检查：如果密钥太短或格式不对，直接拦截并提示
-  if (cleanApiKey.length < 20) {
+  if (apiKeys.length === 0) {
     return new Response(
       JSON.stringify({ 
-        error: `API Key 格式似乎不对。收到长度: ${cleanApiKey.length}，开头: ${cleanApiKey.substring(0, 4)}...`,
-        tip: "请确保从 AI Studio 复制了完整的密钥（通常以 AIza 开头）。"
+        error: "未检测到有效的 API Key。",
+        tip: "请确保在 Cloudflare 后台配置了以 AIza 开头的密钥。"
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
+
   try {
     const { topic, keyPoints, systemPrompt, userQuery } = await request.json();
-    const ai = new GoogleGenAI({ apiKey: cleanApiKey });
     
-    // 尝试模型顺序：1.5-flash-latest -> 1.5-flash-8b -> 2.0-flash
     let response;
-    const modelsToTry = ["gemini-1.5-flash-latest", "gemini-1.5-flash-8b", "gemini-2.0-flash"];
     let lastError: any = null;
+    const modelsToTry = ["gemini-1.5-flash-latest", "gemini-1.5-flash-8b", "gemini-2.0-flash"];
 
-    for (const modelName of modelsToTry) {
-      try {
-        response = await ai.models.generateContent({
-          model: modelName, 
-          contents: userQuery,
-          config: {
-            systemInstruction: systemPrompt,
-            tools: [{ googleSearch: {} }]
+    // 轮询所有密钥
+    for (const apiKey of apiKeys) {
+      const ai = new GoogleGenAI({ apiKey });
+      
+      // 针对当前密钥尝试不同模型
+      for (const modelName of modelsToTry) {
+        try {
+          response = await ai.models.generateContent({
+            model: modelName, 
+            contents: userQuery,
+            config: {
+              systemInstruction: systemPrompt,
+              tools: [{ googleSearch: {} }]
+            }
+          });
+          if (response) break; 
+        } catch (err: any) {
+          lastError = err;
+          console.warn(`Key ${apiKey.substring(0, 6)}... with model ${modelName} failed:`, err.message);
+          
+          // 如果是密钥无效，直接跳到下一个密钥
+          if (err.message?.includes("API key not valid")) {
+            break; 
           }
-        });
-        if (response) break; // 成功获取响应，跳出循环
-      } catch (err: any) {
-        lastError = err;
-        console.warn(`Model ${modelName} failed:`, err.message);
-        // 如果是配额错误，继续尝试下一个模型
-        if (err.message?.includes("429") || err.message?.includes("quota")) {
-          continue;
+          // 如果是配额问题，尝试下一个模型或下一个密钥
+          if (err.message?.includes("429") || err.message?.includes("quota")) {
+            continue;
+          }
+          throw err;
         }
-        // 如果是其他致命错误，直接抛出
-        throw err;
       }
+      if (response) break; // 如果当前密钥成功了，跳出密钥循环
     }
 
     if (!response) {
