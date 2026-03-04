@@ -203,7 +203,23 @@ export default function App() {
 
   const downloadMarkdown = () => {
     if (!markdown) return;
-    const blob = new Blob([markdown], { type: 'text/markdown' });
+    
+    let finalContent = markdown;
+    if (coverImage) {
+      // If it's a Hugo post, try to insert into front-matter or just at the top
+      if (markdown.startsWith('---')) {
+        const parts = markdown.split('---');
+        if (parts.length >= 3) {
+          // Insert into front-matter
+          parts[1] = parts[1] + `featured_image: "${coverImage}"\n`;
+          finalContent = parts.join('---');
+        }
+      }
+      // Also add a visible image tag at the top for standard previewers
+      finalContent = `![Cover](${coverImage})\n\n` + finalContent;
+    }
+
+    const blob = new Blob([finalContent], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const safeTitle = topic.replace(/[\\/:"*?<>|]/g, '_') || 'article';
@@ -211,12 +227,16 @@ export default function App() {
     a.download = `${safeTitle}.md`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast("文稿已导出");
+    showToast("文稿已导出（含封面图）");
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(markdown);
-    showToast("已复制源码");
+    let finalContent = markdown;
+    if (coverImage) {
+      finalContent = `![Cover](${coverImage})\n\n` + finalContent;
+    }
+    navigator.clipboard.writeText(finalContent);
+    showToast("已复制源码（含封面图）");
   };
 
   const loadFromHistory = (article: Article) => {
