@@ -30,7 +30,7 @@ export const onRequestPost = async (context) => {
     
     let response;
     let lastError: any = null;
-    const modelsToTry = ["gemini-1.5-flash-latest", "gemini-1.5-flash-8b", "gemini-2.0-flash"];
+    const modelsToTry = ["gemini-3-flash-preview", "gemini-flash-latest", "gemini-1.5-flash"];
 
     // 轮询所有密钥
     for (const apiKey of apiKeys) {
@@ -39,6 +39,7 @@ export const onRequestPost = async (context) => {
       // 针对当前密钥尝试不同模型
       for (const modelName of modelsToTry) {
         try {
+          // 第一次尝试：带联网搜索
           response = await ai.models.generateContent({
             model: modelName, 
             contents: userQuery,
@@ -47,23 +48,26 @@ export const onRequestPost = async (context) => {
               tools: [{ googleSearch: {} }]
             }
           });
-          if (response) break; 
         } catch (err: any) {
-          lastError = err;
-          console.warn(`Key ${apiKey.substring(0, 6)}... with model ${modelName} failed:`, err.message);
-          
-          // 如果是密钥无效，直接跳到下一个密钥
-          if (err.message?.includes("API key not valid")) {
-            break; 
-          }
-          // 如果是配额问题，尝试下一个模型或下一个密钥
-          if (err.message?.includes("429") || err.message?.includes("quota")) {
+          console.warn(`Attempt with ${modelName} and tools failed, trying without tools...`);
+          try {
+            // 第二次尝试：不带联网搜索（防止某些模型不支持工具）
+            response = await ai.models.generateContent({
+              model: modelName, 
+              contents: userQuery,
+              config: { systemInstruction: systemPrompt }
+            });
+          } catch (retryErr: any) {
+            lastError = retryErr;
+            console.warn(`Key ${apiKey.substring(0, 6)}... with model ${modelName} failed:`, retryErr.message);
+            
+            if (retryErr.message?.includes("API key not valid")) break; 
             continue;
           }
-          throw err;
         }
+        if (response) break; 
       }
-      if (response) break; // 如果当前密钥成功了，跳出密钥循环
+      if (response) break; 
     }
 
     if (!response) {
