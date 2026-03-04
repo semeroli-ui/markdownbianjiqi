@@ -44,6 +44,7 @@ interface Article {
   topic: string;
   content: string;
   sources: GroundingSource[];
+  coverImage?: string | null;
   date: string;
 }
 
@@ -53,6 +54,7 @@ export default function App() {
   const [keyPoints, setKeyPoints] = useState('');
   const [markdown, setMarkdown] = useState('');
   const [sources, setSources] = useState<GroundingSource[]>([]);
+  const [coverImage, setCoverImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'edit' | 'preview' | 'split'>('split');
@@ -132,10 +134,12 @@ export default function App() {
       const result = await response.json();
       const contentText = result.text;
       const groundingSources = result.sources || [];
+      const generatedCover = result.coverImage;
 
       if (contentText) {
         setMarkdown(contentText);
         setSources(groundingSources);
+        setCoverImage(generatedCover);
         
         // Add to history
         const newArticle: Article = {
@@ -143,6 +147,7 @@ export default function App() {
           topic,
           content: contentText,
           sources: groundingSources,
+          coverImage: generatedCover,
           date: now
         };
         setHistory(prev => [newArticle, ...prev.slice(0, 9)]);
@@ -179,6 +184,7 @@ export default function App() {
     setTopic(article.topic);
     setMarkdown(article.content);
     setSources(article.sources);
+    setCoverImage(article.coverImage || null);
     setShowHistory(false);
   };
 
@@ -347,6 +353,15 @@ export default function App() {
                 className="flex-1 bg-white rounded-2xl shadow-sm border border-black/5 overflow-y-auto p-12"
               >
                 <div className="max-w-2xl mx-auto markdown-body">
+                  {coverImage && (
+                    <motion.img 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      src={coverImage} 
+                      alt="Cover" 
+                      className="w-full aspect-video object-cover rounded-2xl shadow-2xl mb-12"
+                    />
+                  )}
                   <ReactMarkdown>{markdown || "_等待灵感降临..._"}</ReactMarkdown>
                 </div>
               </motion.div>

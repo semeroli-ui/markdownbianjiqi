@@ -32,17 +32,70 @@
 }
 
 .markdown-body {
-  @apply font-serif leading-relaxed text-lg;
+  @apply font-serif leading-[1.8] text-ink/80;
+  font-size: 1.125rem;
+}
+
+/* Drop Cap - 首字下沉 */
+.markdown-body > p:first-of-type::first-letter {
+  @apply float-left text-6xl font-black mr-3 mt-2 text-ink;
+  line-height: 1;
+}
+
+.markdown-body h1 {
+  @apply text-5xl font-black mb-12 tracking-tight leading-tight text-ink;
 }
 
 .markdown-body h2 {
-  @apply text-2xl font-bold mt-12 mb-6 pb-2 border-b border-black/5;
+  @apply text-3xl font-bold mt-16 mb-8 pb-4 border-b border-black/10 text-ink tracking-tight;
+}
+
+.markdown-body h3 {
+  @apply text-xl font-bold mt-10 mb-4 text-ink/90;
 }
 
 .markdown-body p {
-  @apply mb-6;
+  @apply mb-8 text-justify;
 }
 
 .markdown-body blockquote {
-  @apply border-l-4 border-black/20 pl-6 italic my-8 text-black/60;
+  @apply border-l-0 pl-0 my-12 relative py-4;
+}
+
+.markdown-body blockquote::before {
+  content: "“";
+  @apply absolute -left-8 -top-4 text-7xl text-black/5 font-serif;
+}
+
+.markdown-body blockquote p {
+  @apply text-2xl font-medium italic text-ink/70 leading-relaxed text-center max-w-xl mx-auto;
+}
+
+.markdown-body table {
+  @apply w-full my-12 border-collapse text-sm;
+}
+
+.markdown-body th {
+  @apply bg-black/5 p-4 text-left font-bold border-b border-black/10 uppercase tracking-widest text-[10px];
+}
+
+.markdown-body td {
+  @apply p-4 border-b border-black/5;
+}
+
+.markdown-body hr {
+  @apply my-16 border-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent;
+}
+
+.markdown-body ul, .markdown-body ol {
+  @apply mb-8 pl-6 space-y-3;
+}
+
+.markdown-body li {
+  @apply list-disc;
+}
+
+/* Image styling */
+.markdown-body img {
+  @apply rounded-2xl shadow-2xl my-12 w-full object-cover;
 }

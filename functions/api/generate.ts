@@ -77,6 +77,32 @@ export const onRequestPost = async (context) => {
 
     const contentText = response.text || '';
     
+    // --- 封面图生成 ---
+    let coverImage = null;
+    try {
+      const aiForImage = new GoogleGenAI({ apiKey: apiKeys[0] }); // 使用第一个密钥尝试生成图片
+      const imageResponse = await aiForImage.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: {
+          parts: [{ text: `为以下主题创作一张精美的文章封面图，风格要求：极简主义、艺术感、高品质杂志风格。主题：${topic}` }]
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: "16:9"
+          }
+        }
+      });
+
+      for (const part of imageResponse.candidates[0].content.parts) {
+        if (part.inlineData) {
+          coverImage = `data:image/png;base64,${part.inlineData.data}`;
+          break;
+        }
+      }
+    } catch (imgErr) {
+      console.warn("Cover image generation failed:", imgErr);
+    }
+
     // 提取搜索溯源信息
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     const groundingSources = groundingChunks?.map((chunk: any) => ({
@@ -85,7 +111,11 @@ export const onRequestPost = async (context) => {
     })).filter((s: any) => s.uri) || [];
 
     return new Response(
-      JSON.stringify({ text: contentText, sources: groundingSources }),
+      JSON.stringify({ 
+        text: contentText, 
+        sources: groundingSources,
+        coverImage: coverImage 
+      }),
       { headers: { "Content-Type": "application/json" } }
     );
 
